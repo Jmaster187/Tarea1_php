@@ -34,7 +34,7 @@
           </ul>
         </li>
       </ul>
-      <form class="d-flex">
+      <form class="d-flex" action="" method="post">
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>
@@ -44,7 +44,7 @@
    </header>
    <h1>Formulario Empleado</h1>
    <div class="container">     
-        <form  action="empresa.php" method="post" class="form-group needs-validation" novalidate>
+        <form  action="crud_empleados.php" method="post" class="form-group needs-validation" novalidate>
         <label for="lbl_id" class="form-label"><b>ID</b></label>
         <input type="text" class="form-control" name="txt_id" id="txt_id" value="0" readonly>
         <label for="lbl_codigo" class="form-label"><b>Codigo</b></label>
@@ -62,14 +62,14 @@
         <label for="lbl_puesto" class="form-label"><b>Puesto</b></label>
         <select name="drop_puesto" id="drop_puesto" class="form-select" required>
                 <option selected disabled value="">Seleccione</option>
-                <?php 
+      <?php 
         include("datos_conexion.php");
         $db_conexion = mysqli_connect ($db_host,$db_user,$db_pass,$db_db); 
             if ($db_conexion){
                 $db_conexion -> real_query("Select id_puesto as id,puesto from puestos");
                 $resultado = $db_conexion -> use_result();
                 while($fila = $resultado ->fetch_assoc()){
-                    echo "<option value=". $fila['id'] .">". $fila['puesto']."</option>";
+                  echo "<option value=". $fila['id'] .">". $fila['puesto']."</option>";
 
                 }
 
@@ -82,12 +82,75 @@
 
         </select>
         </br>
-        <button name="btn_crear" id="btn_crear" class="btn btn-primary"  value="crear" ><i class="bi bi-floppy-fill"></i> Crear</button>
+        <button name="btn_agregar" id="btn_agregar" class="btn btn-primary"  value="agregar" ><i class="bi bi-floppy-fill"></i> Crear</button>
         <button name="btn_actualizar" id="btn_actualizar" class="btn btn-warning"  value="actualizar" ><i class="bi bi-pencil-fill"></i> Actualizar</button>
-        <button name="btn_borrar" id="btn_borrar" class="btn btn-danger"  value="borrar" ><i class="bi bi-trash-fill"></i> Borrar</button>        
+        <button name="btn_borrar" id="btn_borrar" class="btn btn-danger"  value="borrar" onclick="return confirmDelete()"><i class="bi bi-trash-fill"></i> Borrar</button>        
         </form>
 
+        <div
+          class="table-responsive"
+        >
+          <table
+            class="table table-striped table-inverse table-responsive"
+          >
+            <thead class="table-inverse">
+              <tr>
+                <th>Código</th>
+                <th>Nombres</th>
+                <th>Apellidos</th>
+                <th>Dirección</th>
+                <th>Telefono</th>
+                <th>Fecha Nacimiento</th>
+                <th>Puesto</th>
+              </tr>
+            </thead>
+            <tbody id="tbl_empleados" class="table-group-divider">
+            <?php 
+                include("datos_conexion.php");
+                $db_conexion = mysqli_connect ($db_host,$db_user,$db_pass,$db_db); 
+                    if ($db_conexion){
+                        $db_conexion -> real_query("SELECT 
+                                                          e.id_empleado AS id,
+                                                          e.codigo,
+                                                          e.nombres,
+                                                          e.apellidos,
+                                                          e.direccion,
+                                                          e.telefono,
+                                                          p.puesto,
+                                                          e.fecha_nacimiento,
+                                                          p.id_puesto
+                                                        FROM empleados e
+                                                        LEFT JOIN puestos p ON p.id_puesto = e.id_puesto;");
+                        $resultado = $db_conexion -> use_result();
+                        while($fila = $resultado ->fetch_assoc()){
+                            echo "<tr data-id='" . $fila['id'] . "' data-idp='" . $fila['id_puesto'] . "'>";
+                            echo "<td>". $fila['codigo']."</td>";
+                            echo "<td>". $fila['nombres']."</td>";
+                            echo "<td>". $fila['apellidos']."</td>";
+                            echo "<td>". $fila['direccion']."</td>";
+                            echo "<td>". $fila['telefono']."</td>";
+                            echo "<td>". $fila['fecha_nacimiento'] ."</td>";
+                            echo "<td>". $fila['puesto']."</td>";
+                            echo "</tr>";
+
+                        }
+
+                      
+
+                    } 
+                    $db_conexion ->close();
+
+    ?>
+            </tbody>
+            <tfoot>
+              
+            </tfoot>
+          </table>
         </div>
+        
+
+        </div>
+
     <script>
         // Example starter JavaScript for disabling form submissions if there are invalid fields
 (function () {
@@ -110,7 +173,37 @@
     })
 })()
     </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.js" integrity="sha256-UgvvN8vBkgO0luPSUl2s8TIlOSYRoGFAX4jlCIm9Adc=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-</body>
+  <script>
+    $("#tbl_empleados").on('click', 'tr td', function (e) {
+      var target,id,idp,codigo,nombres,apellidos,direccion,telefono, nacimiento;
+      target = $(event.target);
+      id = target.parent().data('id');
+      idp = target.parent().data('idp');
+      codigo = target.parent('tr').find("td").eq(0).html();
+      nombres = target.parent('tr').find("td").eq(1).html();
+      apellidos = target.parent('tr').find("td").eq(2).html();
+      direccion = target.parent('tr').find("td").eq(3).html();
+      telefono = target.parent('tr').find("td").eq(4).html();
+      nacimiento = target.parent('tr').find("td").eq(5).html();
+      $("#txt_id").val(id);
+      $("#txt_codigo").val(codigo);
+      $("#txt_nombres").val(nombres);
+      $("#txt_apellidos").val(apellidos);
+      $("#txt_direccion").val(direccion);
+      $("#txt_telefono").val(telefono);
+      $("#txt_fn").val(nacimiento );
+      $("#drop_puesto").val(idp);
+    });
+
+    // alerta para eliminar
+    function confirmDelete() {
+      return confirm('Estas seguro de eliminar');
+    }
+
+  </script>
+  
+  </body>
 </html>
